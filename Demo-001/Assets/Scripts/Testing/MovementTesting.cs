@@ -21,7 +21,7 @@ namespace Testing
     
         private void FixedUpdate()
         {
-            Debug.Log(rb.linearVelocity.magnitude);
+            //Debug.Log("Velocity " + rb.linearVelocity.magnitude);
             LimitSpeed();
             HandleMovement();
             HandleRotation();
@@ -63,17 +63,29 @@ namespace Testing
             if (Input.GetKey(KeyCode.S))
             {
                 thrustInput = -1f;
+            }
+            
+            HandleBackward();
+            rb.linearVelocity += (Vector2)transform.up * (thrustInput * thrust * Time.fixedDeltaTime);
+        }
+
+        void HandleBackward()
+        {
+            if (Vector2.Dot(rb.linearVelocity.normalized, transform.up) < 0)
+            {
                 currentMaxSpeed = maxSpeed * (1-debuffBackDir/100f);
             }
-                
-    
-            rb.AddForce(transform.up * (thrustInput * thrust));
         }
     
+        // ReSharper disable Unity.PerformanceAnalysis
         void LimitSpeed()
         {
-            if (rb.linearVelocity.magnitude > currentMaxSpeed)
+            if(rb.linearVelocity.magnitude > currentMaxSpeed)
+            {
+                //Debug.Log("Normalized "+rb.linearVelocity.normalized);
                 rb.linearVelocity = rb.linearVelocity.normalized * currentMaxSpeed;
+            }
+               
         }
     }
 }
