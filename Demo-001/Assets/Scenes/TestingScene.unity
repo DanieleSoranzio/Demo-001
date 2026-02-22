@@ -155,6 +155,10 @@ MonoBehaviour:
   maxSpeed: 16
   debuffBackDir: 50
   drift: 0.4
+  maxFuel: 100
+  burnRate: 20
+  acceleration: 100
+  friction: 2
 --- !u!50 &115246196
 Rigidbody2D:
   serializedVersion: 5

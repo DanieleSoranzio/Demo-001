@@ -13,15 +13,23 @@ namespace Testing
         [Range(0f, 1f)]
         public float drift;    
         private Rigidbody2D rb;
+        public float maxFuel=100;
+        private float currentFuel;
+        public float burnRate=1;
+        public float acceleration;
+        [Range(0f,2f)]
+        public float friction;
     
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
+            currentFuel = maxFuel;
         }
     
         private void FixedUpdate()
         {
-            //Debug.Log("Velocity " + rb.linearVelocity.magnitude);
+            Debug.Log("Velocity " + Mathf.Round(rb.linearVelocity.magnitude));
+            Debug.Log("Fuel "+   Mathf.Round(currentFuel));
             LimitSpeed();
             HandleMovement();
             HandleRotation();
@@ -32,10 +40,7 @@ namespace Testing
         {
             Vector2 forwardVelocity = transform.up * Vector2.Dot(rb.linearVelocity, transform.up);
             Vector2 lateralVelocity = transform.right * Vector2.Dot(rb.linearVelocity, transform.right);
-
-            
             rb.linearVelocity = forwardVelocity + lateralVelocity * drift;
-            
         }
     
         void HandleRotation()
@@ -53,20 +58,35 @@ namespace Testing
         void HandleMovement()
         {
             float thrustInput = 0f;
-            
+            float currentThrust = thrust;
+            currentMaxSpeed = maxSpeed;
 
             if (Input.GetKey(KeyCode.W))
             {
                 thrustInput = 1f;
-                currentMaxSpeed = maxSpeed;
             }
             if (Input.GetKey(KeyCode.S))
             {
                 thrustInput = -1f;
             }
+
+            if (Input.GetKey(KeyCode.Space) && currentFuel > 0f) 
+            {
+                thrustInput = 1f;
+                currentThrust = thrust * (1 + acceleration / 100f);
+                currentMaxSpeed = maxSpeed * 4f;
+                currentFuel -= burnRate * Time.deltaTime;
+            }
+            else if(!(Input.GetKey(KeyCode.Space)&&currentFuel < maxFuel) || currentFuel<=0f)
+            {
+                currentFuel += burnRate * Time.fixedDeltaTime;
+            }
+            currentFuel = Mathf.Clamp(currentFuel, 0f, maxFuel);
             
             HandleBackward();
-            rb.linearVelocity += (Vector2)transform.up * (thrustInput * thrust * Time.fixedDeltaTime);
+            if(!LimitSpeed())
+                rb.linearVelocity += (Vector2)transform.up * (thrustInput * currentThrust * Time.fixedDeltaTime);
+            
         }
 
         void HandleBackward()
@@ -76,16 +96,18 @@ namespace Testing
                 currentMaxSpeed = maxSpeed * (1-debuffBackDir/100f);
             }
         }
-    
-        // ReSharper disable Unity.PerformanceAnalysis
-        void LimitSpeed()
+        
+        bool LimitSpeed()
         {
             if(rb.linearVelocity.magnitude > currentMaxSpeed)
             {
-                //Debug.Log("Normalized "+rb.linearVelocity.normalized);
-                rb.linearVelocity = rb.linearVelocity.normalized * currentMaxSpeed;
+                rb.linearDamping = friction;
+                return true;
             }
-               
+
+            rb.linearDamping = 0;
+            return false;
+
         }
     }
 }
